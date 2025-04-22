@@ -27,13 +27,14 @@ Note, this script compares images RGB (actually brg but it doesnt matter at all)
 
 ## Using prebuild exe
 
-Just grab exe file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases)
+Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases) and unpack it (make sure that assets folder is next to exe)
 
-With cmd
+- With cmd
 `smnexusautodl.exe <arguments>`
-With powershell
+- With powershell
 `./smnexusautodl.exe <arguments>`
-
+- Command for running with firefox and Vortex
+`./smnexusautodl.exe --browser firefox --vortex  --verbose `
 
 
 ## Running source code
