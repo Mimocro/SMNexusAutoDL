@@ -15,7 +15,7 @@ Miniconda/anaconda of any version, Windows 10+, should run on potato
 First, open your vortex, make the window as small as possible, and move it at the top\bottom left\right corner as you like. Then, if you want to see terminal, move it under vortex window. 
 And finnaly, open browser you going to use, and move it to the side of your desktop. It should look just like this
 
-[potato](./screenshoot.png)
+![potato](./screenshoot.png)
 
 Then, you can close browser. Script will open new broswer window, the purpose of openning it manually is for remembering browser position
 
@@ -97,7 +97,8 @@ If script makes too much false positive clicks or not clicking at all, you can c
     "vortex_cont": ["VortexContinueButton.png", "VortexContinueButton2.png", "VortexContinueButton3.png"], #continue button for a case when vortex asks if it ned to redownload mod
     "understood": ["UnderstoodButton.png", "UnderstoodButton2.png", "UnderstoodButton3.png"], 
     "staging": ["StagingButton.png", "StagingButton2.png", "StagingButton3.png"]
-}```
+}
+```
 
 
 2) Change THRESHOLD values:
@@ -109,7 +110,7 @@ If script makes too much false positive clicks or not clicking at all, you can c
 My setup is ssd and not that bad cpu, 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If script works too chaotic, adjust timeouts (increase them). If you have NASA pc, and you want faster speed, mess with this values and it will be ~2 times faster or so. 
 
 # Demo
-[potato](./demo.mp4)
+![potato](./demo.mp4)
 
 # Credit
 Credit goes to [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) for being solid base for this project.
