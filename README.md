@@ -28,6 +28,8 @@ Note, this script compares images RGB (actually brg but it doesnt matter at all)
 
 ## Using prebuild exe
 
+Just grab exe file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases)
+
 With cmd
 `smnexusautodl.exe <arguments>`
 With powershell
