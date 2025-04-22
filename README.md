@@ -109,7 +109,7 @@ If script makes too much false positive clicks or not clicking at all, you can c
 - For exp, if there is too many false positive clicks with download button at vortex, decrease to something like `--vortex-dl-match-threshold 0.95`. In reverse, if it fails to find this button, decrease it to `--vortex-dl-match-threshold 0.8` or lower - or try to make your own screenshoot as described early.
 
 3) Change timeouts
-My setup is ssd and not that bad cpu, 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If script works too chaotic, adjust timeouts (increase them). If you have NASA pc, and you want faster speed, mess with this values and it will be ~2 times faster or so. 
+- My setup is ssd and not that bad cpu, 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If script works too chaotic, adjust timeouts (increase them). If you have NASA pc, and you want faster speed, mess with this values and it will be ~2 times faster or so. 
 
 # Demo
 
