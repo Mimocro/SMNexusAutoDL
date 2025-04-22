@@ -110,7 +110,9 @@ If script makes too much false positive clicks or not clicking at all, you can c
 My setup is ssd and not that bad cpu, 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If script works too chaotic, adjust timeouts (increase them). If you have NASA pc, and you want faster speed, mess with this values and it will be ~2 times faster or so. 
 
 # Demo
-![potato](./demo.mp4)
+
+https://github.com/user-attachments/assets/f19c5208-d0aa-4462-b180-3efb85a66259
+
 
 # Credit
 Credit goes to [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) for being solid base for this project.
