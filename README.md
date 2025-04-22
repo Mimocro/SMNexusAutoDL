@@ -7,7 +7,6 @@ You can start downloading 9999+ mods collection at night and simply go to sleep 
 
 The main purpose of rewriting [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) and not using similar projects on github/somewhere else is really low accuracy of existing projects. 1 - most of them based on sift. Its overkill for finding buttons, they will be never rotated even in 2d, so they just leading to false positives. A lot of. 2 - they just scanning for all known buttons every time. It also leads to false positives. With state machine and much simplier and robust `cv2.matchTemplate` the main issues are gone. Also it will close browser tab keeping 2 open tabs in ram - not all 9999+ tabs. The next step is only to use full ai agent based solution, but if you can afford THAT, then just go buy nexus subscription. It really not worth any of it
 
-
 # Prerequisites
 Windows 10+, should run on potato
 Miniconda/anaconda of any version if running from source file
@@ -68,25 +67,25 @@ Basic command that you can copypaste if you using firefox and vortex:
 
 
 # Command Line Options
-
-`--browser <browserName>`: selects browser to open and move to work with Vortex. Can only be used in combination with `--vortex`. Currently supported browsers: “chrome”, “firefox” and "edge" (limited and untested)
-`--vortex`: specifies use with Vortex mod manager: i have not tested it with any other mod manager, but it should work i think
-`--verbose`: prints verbose output
-`--force-primary`: forces a system with multiple monitors to only be scanned on it’s primary display
-`--vortex-dl-match-threshold <float>`: Match threshold for Vortex download button (default: 0.9)
-`--vortex-cont-match-threshold <float>`: Match threshold for Vortex continue button (default: 0.9)
-`--web-dl-match-threshold <float>`: Match threshold for web download button (default: 0.8)
-`--click-here-match-threshold <float>`: Match threshold for "click here" button (default: 0.9)
-`--understood-match-threshold <float>`: Match threshold for "understood" button (default: 0.9)
-`--staging-match-threshold <float>`: Match threshold for staging button (default: 0.9)
-`--wait-timeout-vortex <seconds>`: Timeout (s) for Vortex-related waits (default: 7.0)
-`--wait-timeout-web <seconds>`: Timeout (s) for web-related waits (default: 4.0)
-`--wait-timeout-click-here <seconds>`: Timeout (s) for "click here" waits (default: 6.0)
-`--scan-interval-vortex <seconds>`: Scan interval (s) for Vortex actions (default: 0.2)
-`--scan-interval-web <seconds>`: Scan interval (s) for web actions (default: 0.5)
-`--scan-interval-click-here <seconds>`: Scan interval (s) for "click here" actions (default: 0.5)
-`--post-click-delay <seconds>`: Delay (s) after click before restarting scan (default: 2.0)
-
+```
+--browser <browserName>: selects browser to open and move to work with Vortex. Can only be used in combination with `--vortex`. Currently supported browsers: “chrome”, “firefox” and "edge" (limited and untested)
+--vortex: specifies use with Vortex mod manager: i have not tested it with any other mod manager, but it should work i think
+--verbose: prints verbose output
+--force-primary: forces a system with multiple monitors to only be scanned on it’s primary display
+--vortex-dl-match-threshold <float>: Match threshold for Vortex download button (default: 0.9)
+--vortex-cont-match-threshold <float>: Match threshold for Vortex continue button (default: 0.9)
+--web-dl-match-threshold <float>: Match threshold for web download button (default: 0.8)
+--click-here-match-threshold <float>: Match threshold for "click here" button (default: 0.9)
+--understood-match-threshold <float>: Match threshold for "understood" button (default: 0.9)
+--staging-match-threshold <float>: Match threshold for staging button (default: 0.9)
+--wait-timeout-vortex <seconds>: Timeout (s) for Vortex-related waits (default: 7.0)
+--wait-timeout-web <seconds>: Timeout (s) for web-related waits (default: 4.0)
+--wait-timeout-click-here <seconds>: Timeout (s) for "click here" waits (default: 6.0)
+--scan-interval-vortex <seconds>: Scan interval (s) for Vortex actions (default: 0.2)
+--scan-interval-web <seconds>: Scan interval (s) for web actions (default: 0.5)
+--scan-interval-click-here <seconds>: Scan interval (s) for "click here" actions (default: 0.5)
+--post-click-delay <seconds>: Delay (s) after click before restarting scan (default: 2.0)
+```
 
 # Adjusting parameters
 If script makes too much false positive clicks or not clicking at all, you can change
