@@ -3,3 +3,4 @@ build/
 *.ico
 *.svg
 *.spec
+dist/

@@ -9,7 +9,8 @@ The main purpose of rewriting [NexusAutoDL](https://github.com/jaylann/NexusAuto
 
 
 # Prerequisites
-Miniconda/anaconda of any version, Windows 10+, should run on potato
+Windows 10+, should run on potato
+Miniconda/anaconda of any version if running from source file
 
 # Setup
 First, open your vortex, make the window as small as possible, and move it at the top\bottom left\right corner as you like. Then, if you want to see terminal, move it under vortex window. 
