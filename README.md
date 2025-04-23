@@ -1,33 +1,32 @@
 # StateMachineNexusAutoDL
-This is a state machine version of [NexusAutoDL](https://github.com/jaylann/NexusAutoDL), designed for automating the process of downloading mods from [Nexusmods](https://www.nexusmods.com/), without being a premium member. 
-Literally the same functional, but a little more robust. It also auto closes broser tabs (at least, really tries to) so you dont need to manually close them, as well as have 9000GB+ of ram. However, it requires some specific setup for beter clicking accuracy. 
+This is a state machine version of [NexusAutoDL](https://github.com/jaylann/NexusAutoDL), designed for automating the process of downloading mods from [Nexusmods](https://www.nexusmods.com/), without being a premium member
+Literally the same functionality, but a little more robust. It also auto-closes browser tabs (at least, it really tries to) so you don't need to manually close them or have 9000GB+ of RAM. However, it requires some specific setup for better clicking accuracy
 
 # With this script
-You can start downloading 9999+ mods collection at night and simply go to sleep - it shall be done tomorrow. You need to check if it works first ofc, and, if you are not sure if this pice of code have some potential treat to your pc, read source code (sorry for zero readability). 
+You can start downloading a 9999+ mods collection at night and simply go to sleep - it should be done by tomorrow. You need to check if it works first ofc, and, if you are not sure if this piece of code has some potential threat to your PC, read the source code (sorry for the zero readability)
 
-The main purpose of rewriting [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) and not using similar projects on github/somewhere else is really low accuracy of existing projects. 1 - most of them based on sift. Its overkill for finding buttons, they will be never rotated even in 2d, so they just leading to false positives. A lot of. 2 - they just scanning for all known buttons every time. It also leads to false positives. With state machine and much simplier and robust `cv2.matchTemplate` the main issues are gone. Also it will close browser tab keeping 2 open tabs in ram - not all 9999+ tabs. The next step is only to use full ai agent based solution, but if you can afford THAT, then just go buy nexus subscription. It really not worth any of it
+The main purpose of rewriting [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) and not using similar projects on GitHub/somewhere else is the really low accuracy of existing projects. 1 - Most of them are based on SIFT. It's overkill for finding buttons; they will never be rotated, even in 2D, so they just lead to false positives. A lot. 2 - They just scan for all known buttons every time. It also leads to false positives. With a state machine and the much simpler and robust `cv2.matchTemplate`, these main issues are gone. Also, it will close browser tabs keeping 2 open tabs in RAM - not all 9999+ tabs. The next step would be to use a full AI agent-based solution, but if you can afford THAT, then just go buy a Nexus subscription. It's really not worth any of it
 
 # Prerequisites
-Windows 10+, should run on potato
+Windows 10+, should run on any potato
 Miniconda/anaconda of any version if running from source file
 
 # Setup
-First, open your vortex, make the window as small as possible, and move it at the top\bottom left\right corner as you like. Then, if you want to see terminal, move it under vortex window. 
-And finnaly, open browser you going to use, and move it to the side of your desktop. It should look just like this
+First, open your vortex, make the window as small as possible, and move it at the top\bottom left\right corner as you like. Then, if you want to see a terminal, move it under the vortex window.
+And finally, open the browser you are going to use, and move it to the side of your desktop. It should look just like this
 
 ![potato](./screenshoot.png)
 
-Then, you can close browser. Script will open new broswer window, the purpose of openning it manually is for remembering browser position
+Then, you can close the browser. The script will open a new browser window, the purpose of opening it manually is for remembering the browser position
 
-The basic button templates assumes that you have classic vortex theme, and standart nexusmods dark theme (idk if they even have white theme). If you are using different vortex theme or browser extension in browser that change colors, set it as described or go to `assets` folder and replace existing image with your own screenshots. 
-Note, this script compares images RGB (actually brg but it doesnt matter at all) values and it will not convert them to grayscale. This is done due minimization of false positives. If something not working as expected, adjust parameters as described under Adjusting parameters.
-
+The basic button templates assume that you have a classic vortex theme, and a standard nexusmods dark theme (idk if they even have a white theme). If you are using a different vortex theme or a browser extension in a browser that changes colors, set it as described or go to the `assets` folder and replace the existing image with your own screenshots.
+Note, this script compares image RGB (actually brg but it doesnt matter at all) values and it will not convert them to grayscale. This is done due to the minimization of false positives. If something is not working as expected, adjust parameters as described under Adjusting parameters.
 
 # Running the Script
 
 ## Using prebuild exe
 
-Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases) and unpack it (make sure that assets folder is next to exe)
+Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases) and unpack it (make sure that the assets folder is next to the exe)
 
 - With cmd
 `smnexusautodl.exe <arguments>`
@@ -63,7 +62,7 @@ Run python script with or without arguments.
 Windows:
 `python main.py <arguments>`
 
-Basic command that you can copypaste if you using firefox and vortex:
+A basic command that you can copypaste if you are using firefox and vortex:
 `python main.py --browser firefox --vortex  --verbose `
 
 
@@ -89,10 +88,10 @@ Basic command that you can copypaste if you using firefox and vortex:
 ```
 
 # Adjusting parameters
-If script makes too much false positive clicks or not clicking at all, you can change
-1) Images under assets folder:
-- Make and crop screenshot of the button that script fails to click
-- Replace file in `assets` folder with your own. There is some notes from source code
+If the script makes too many false positive clicks or is not clicking at all, you can change
+1) Images under the assets folder:
+- Make and crop a screenshot of the button that the script fails to click
+- Replace the file in the `assets` folder with your own screenshots. There are some notes from the source code
 ```BUTTON_ASSETS = {
     "vortex_dl": ["VortexDownloadButton.png", "VortexDownloadButton2.png", "VortexDownloadButton3.png"], #vortex download button
     "web_dl": ["WebsiteDownloadButton.png", "WebsiteDownloadButton2.png", "WebsiteDownloadButton3.png"], #slow download button in nexus site
@@ -105,12 +104,12 @@ If script makes too much false positive clicks or not clicking at all, you can c
 
 
 2) Change THRESHOLD values:
-- See Command Line Options. 
-- Increase/decrease values of the specific buttons based on accuracy of the script.
-- For exp, if there is too many false positive clicks with download button at vortex, decrease to something like `--vortex-dl-match-threshold 0.95`. In reverse, if it fails to find this button, decrease it to `--vortex-dl-match-threshold 0.8` or lower - or try to make your own screenshoot as described early.
+- See Command Line Options.
+- Increase/decrease the values of the specific buttons based on the accuracy of the script.
+- For example, if there are too many false positive clicks with the download button at vortex, decrease to something like `--vortex-dl-match-threshold 0.95`. In reverse, if it fails to find this button, decrease it to `--vortex-dl-match-threshold 0.8` or lower - or try to make your own screenshot as described earlier.
 
 3) Change timeouts
-- My setup is ssd and not that bad cpu, 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If script works too chaotic, adjust timeouts (increase them). If you have NASA pc, and you want faster speed, mess with this values and it will be ~2 times faster or so. 
+- My setup is an ssd and not that bad a cpu, with 300 mb\sec (yeah) internet. It opens the browser tab in like 1 second. If the script works too chaotically, adjust the timeouts (increase them). If you have a NASA pc, and you want faster speed, mess with these values and it will be ~2 times faster or so. 
 
 # Demo
 
@@ -118,8 +117,8 @@ https://github.com/user-attachments/assets/f19c5208-d0aa-4462-b180-3efb85a66259
 
 
 # Credit
-Credit goes to [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) for being solid base for this project.
+Credit goes to [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) for being a solid base for this project.
 
 # Disclaimer
 Nexusmods TOS state that using an automated program to download mods is prohibited. By using this software you are doing so at your own risk. The Author is not responsible for any kind of consequences and damages that might occur by using this program.
-Also, if it will somehow decide to delete Windows or System32 folder, perhaps, this is the only fate..
+Also, if it somehow decides to delete the Windows or System32 folder, perhaps, this is the only fate
