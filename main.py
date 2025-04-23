@@ -404,7 +404,10 @@ class System:
 
         if self.current_state == ScanState.INIT:
             logging.info("Starting scan cycle...")
-            self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
+            if not self.use_vortex_logic:
+                self._transition_state(ScanState.WAIT_FOR_WEB)
+            else:
+                self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
             time.sleep(0.1)
 
         elif self.current_state == ScanState.WAIT_FOR_VORTEX_OR_CONTINUE:
