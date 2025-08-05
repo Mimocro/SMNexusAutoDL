@@ -52,6 +52,7 @@ POST_CLICK_DELAY: float = 2.0
 VORTEX_WINDOW_TITLE = "Vortex"
 USER32 = ctypes.windll.user32
 
+NO_CLICK_HERE = False
 
 class ScanState(Enum):
     INIT = auto()
@@ -393,8 +394,10 @@ class System:
         capture_needed_states = [
              ScanState.WAIT_FOR_VORTEX_OR_CONTINUE,
              ScanState.WAIT_FOR_WEB,
-             ScanState.WAIT_FOR_CLICK_HERE
         ]
+        if not NO_CLICK_HERE:
+            capture_needed_states.append(ScanState.WAIT_FOR_CLICK_HERE)
+
         if self.current_state in capture_needed_states:
              screen_img = self.capture_screen()
              if screen_img is None:
@@ -496,6 +499,10 @@ class System:
 
 
         elif self.current_state == ScanState.WAIT_FOR_CLICK_HERE:
+             if NO_CLICK_HERE:
+                logging.warning(f"Skipping {self.current_state.name}")
+                self._transition_state(ScanState.INIT)
+                return
              if screen_img is None: return
 
              click_here_loc = self.detect_button_alternatives(screen_img, "click_here")
@@ -557,6 +564,7 @@ class System:
 @click.option('--vortex', is_flag=True, default=False, help='Enable Vortex-specific logic.')
 @click.option('--verbose', '-v', is_flag=True, default=False, help='Enable detailed informational logging.')
 @click.option('--force-primary', is_flag=True, default=False, help='Only use the primary monitor.')
+@click.option('--no-click-here', is_flag=True, default=False, help='Skip click here state. Useful for wabbajack')
 @click.option('--vortex-dl-match-threshold', type=float, default=VORTEX_DL_MATCH_THRESHOLD, help='Match threshold for Vortex download button.')
 @click.option('--vortex-cont-match-threshold', type=float, default=VORTEX_CONT_MATCH_THRESHOLD, help='Match threshold for Vortex continue button.')
 @click.option('--web-dl-match-threshold', type=float, default=WEB_DL_MATCH_THRESHOLD, help='Match threshold for web download button.')
@@ -571,7 +579,8 @@ class System:
 @click.option('--scan-interval-click-here', type=float, default=SCAN_INTERVAL_CLICK_HERE, help='Scan interval for "click here" actions.')
 @click.option('--post-click-delay', type=float, default=POST_CLICK_DELAY, help='Delay after final click before restarting scan.')
 
-def main(browser, vortex, verbose, force_primary, vortex_dl_match_threshold, vortex_cont_match_threshold,
+
+def main(browser, vortex, verbose, force_primary, no_click_here, vortex_dl_match_threshold, vortex_cont_match_threshold,
          web_dl_match_threshold, click_here_match_threshold, understood_match_threshold,
          staging_match_threshold, wait_timeout_vortex, wait_timeout_web,
          wait_timeout_click_here, scan_interval_vortex, scan_interval_web,
@@ -581,6 +590,7 @@ def main(browser, vortex, verbose, force_primary, vortex_dl_match_threshold, vor
     global WAIT_TIMEOUT_VORTEX, WAIT_TIMEOUT_WEB, WAIT_TIMEOUT_CLICK_HERE
     global SCAN_INTERVAL_VORTEX, SCAN_INTERVAL_WEB, SCAN_INTERVAL_CLICK_HERE
     global POST_CLICK_DELAY
+    global NO_CLICK_HERE
 
     VORTEX_DL_MATCH_THRESHOLD = vortex_dl_match_threshold
     VORTEX_CONT_MATCH_THRESHOLD = vortex_cont_match_threshold
@@ -595,6 +605,7 @@ def main(browser, vortex, verbose, force_primary, vortex_dl_match_threshold, vor
     SCAN_INTERVAL_WEB = scan_interval_web
     SCAN_INTERVAL_CLICK_HERE = scan_interval_click_here
     POST_CLICK_DELAY = post_click_delay
+    NO_CLICK_HERE = no_click_here
 
     log_level = logging.INFO if verbose else logging.WARNING
     logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')

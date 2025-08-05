@@ -45,9 +45,9 @@ Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/rele
 
 `./smnexusautodl.exe --browser firefox --vortex`
 
-- Command for using in wabbajack 
+- Command for using in wabbajack (note: `--no-click-here` is used because wj will show old frame for a sec, it can cause missclicks)
 
-`./smnexusautodl.exe` 
+`./smnexusautodl.exe --no-click-here` 
 
 Also you can add `-v` arg to see whats going on.
 
@@ -89,6 +89,7 @@ A basic command that you can copypaste if you are using firefox and vortex:
 --vortex: specifies use with Vortex mod manager: i have not tested it with any other mod manager, but it should work i think
 --verbose: prints verbose output
 --force-primary: forces a system with multiple monitors to only be scanned on it’s primary display
+--no-click-here: skip click here state. Useful for wabbajack
 --vortex-dl-match-threshold <float>: Match threshold for Vortex download button (default: 0.9)
 --vortex-cont-match-threshold <float>: Match threshold for Vortex continue button (default: 0.9)
 --web-dl-match-threshold <float>: Match threshold for web download button (default: 0.8)
