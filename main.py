@@ -553,7 +553,7 @@ class System:
 
 
 @click.command()
-@click.option('--browser', type=click.Choice(['chrome', 'firefox', 'edge'], case_sensitive=False), default=None, help='Browser to open (optional).')
+@click.option('--browser', type=click.Choice(['chrome', 'firefox', 'edge', ""], case_sensitive=False), default="", help='Browser to open (optional).')
 @click.option('--vortex', is_flag=True, default=False, help='Enable Vortex-specific logic.')
 @click.option('--verbose', '-v', is_flag=True, default=False, help='Enable detailed informational logging.')
 @click.option('--force-primary', is_flag=True, default=False, help='Only use the primary monitor.')
