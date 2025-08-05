@@ -25,6 +25,7 @@ Note, this script compares image RGB (actually brg but it doesnt matter at all) 
 # Running the Script
 
 ## Using prebuild exe
+### The easy way
 
 Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases) and unpack it (make sure that the assets folder is next to the exe)
 
@@ -34,6 +35,9 @@ Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/rele
 `./smnexusautodl.exe <arguments>`
 - Command for running with firefox and Vortex
 `./smnexusautodl.exe --browser firefox --vortex  --verbose `
+- Command for using in wabbajack
+`./smnexusautodl.exe` 
+
 
 
 ## Running source code
