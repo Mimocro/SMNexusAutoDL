@@ -12,6 +12,7 @@ Windows 10+, should run on any potato
 Miniconda/anaconda of any version if running from source file
 
 # Setup
+## Vortex
 First, open your vortex, make the window as small as possible, and move it at the top\bottom left\right corner as you like. Then, if you want to see a terminal, move it under the vortex window.
 And finally, open the browser you are going to use, and move it to the side of your desktop. It should look just like this
 
@@ -22,6 +23,9 @@ Then, you can close the browser. The script will open a new browser window, the 
 The basic button templates assume that you have a classic vortex theme, and a standard nexusmods dark theme (idk if they even have a white theme). If you are using a different vortex theme or a browser extension in a browser that changes colors, set it as described or go to the `assets` folder and replace the existing image with your own screenshots.
 Note, this script compares image RGB (actually brg but it doesnt matter at all) values and it will not convert them to grayscale. This is done due to the minimization of false positives. If something is not working as expected, adjust parameters as described under Adjusting parameters.
 
+## Wabbajack
+Simply start downloading modlist. Like thats it. Start modlist installation, it will open browser inside wabbakjack and then just start this script.
+
 # Running the Script
 
 ## Using prebuild exe
@@ -30,15 +34,22 @@ Note, this script compares image RGB (actually brg but it doesnt matter at all) 
 Just grab rar file from [releases](https://github.com/Mimocro/SMNexusAutoDL/releases) and unpack it (make sure that the assets folder is next to the exe)
 
 - With cmd
+
 `smnexusautodl.exe <arguments>`
+
 - With powershell
+
 `./smnexusautodl.exe <arguments>`
+
 - Command for running with firefox and Vortex
-`./smnexusautodl.exe --browser firefox --vortex  --verbose `
-- Command for using in wabbajack
+
+`./smnexusautodl.exe --browser firefox --vortex`
+
+- Command for using in wabbajack 
+
 `./smnexusautodl.exe` 
 
-
+Also you can add `-v` arg to see whats going on.
 
 ## Running source code
 
@@ -64,9 +75,11 @@ Install all necessary packages.
 Run python script with or without arguments.
 
 Windows:
+
 `python main.py <arguments>`
 
 A basic command that you can copypaste if you are using firefox and vortex:
+
 `python main.py --browser firefox --vortex  --verbose `
 
 
@@ -118,7 +131,6 @@ If the script makes too many false positive clicks or is not clicking at all, yo
 # Demo
 
 https://github.com/user-attachments/assets/f19c5208-d0aa-4462-b180-3efb85a66259
-
 
 # Credit
 Credit goes to [NexusAutoDL](https://github.com/jaylann/NexusAutoDL) for being a solid base for this project.
