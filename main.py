@@ -5,12 +5,9 @@ import subprocess
 import time
 from enum import Enum, auto
 from typing import Dict, List, Optional, Tuple
-import json
-import os
 import click
 import cv2
 import mss
-import mss.tools
 import numpy as np
 import win32api
 import win32con
@@ -19,29 +16,41 @@ from win32com.client import Dispatch
 
 # change them if something not working
 BUTTON_ASSETS = {
-    "vortex_dl": ["VortexDownloadButton.png", "VortexDownloadButton2.png", "VortexDownloadButton3.png"], #vortex download button
-    "web_dl": ["WebsiteDownloadButton.png", "WebsiteDownloadButton2.png", "WebsiteDownloadButton3.png"], #slow download button in nexus site
-    "click_here": ["ClickHereButton.png", "ClickHereButton2.png", "ClickHereButton3.png"], #click here button in nexus site (just for sure)
-    "vortex_cont": ["VortexContinueButton.png", "VortexContinueButton2.png", "VortexContinueButton3.png"], #continue button for a case when vortex asks if it ned to redownload mod
-    "understood": ["UnderstoodButton.png", "UnderstoodButton2.png", "UnderstoodButton3.png"], 
-    "staging": ["StagingButton.png", "StagingButton2.png", "StagingButton3.png"]
+    "vortex_dl": ["VortexDownloadButton.png", "VortexDownloadButton2.png", "VortexDownloadButton3.png"],  # vortex download button
+    "web_dl": [
+        "WebsiteDownloadButton.png",
+        "WebsiteDownloadButton2.png",
+        "WebsiteDownloadButton3.png",
+    ],  # slow download button in nexus site
+    "click_here": [
+        "ClickHereButton.png",
+        "ClickHereButton2.png",
+        "ClickHereButton3.png",
+    ],  # click here button in nexus site (just for sure)
+    "vortex_cont": [
+        "VortexContinueButton.png",
+        "VortexContinueButton2.png",
+        "VortexContinueButton3.png",
+    ],  # continue button for a case when vortex asks if it ned to redownload mod
+    "understood": ["UnderstoodButton.png", "UnderstoodButton2.png", "UnderstoodButton3.png"],
+    "staging": ["StagingButton.png", "StagingButton2.png", "StagingButton3.png"],
 }
 ASSET_DIRECTORY = "assets"
 
 
 # leave as is
 DEFAULT_MATCH_THRESHOLD = 0.9
-VORTEX_DL_MATCH_THRESHOLD: float = 0.9 #vortex download button
-VORTEX_CONT_MATCH_THRESHOLD: float = 0.9 #slow download button in nexus site
-WEB_DL_MATCH_THRESHOLD: float = 0.8 #click here button in nexus site (just for sure)
-CLICK_HERE_MATCH_THRESHOLD: float = 0.9 #continue button for a case when vortex asks if it ned to redownload mod
+VORTEX_DL_MATCH_THRESHOLD: float = 0.9  # vortex download button
+VORTEX_CONT_MATCH_THRESHOLD: float = 0.9  # slow download button in nexus site
+WEB_DL_MATCH_THRESHOLD: float = 0.8  # click here button in nexus site (just for sure)
+CLICK_HERE_MATCH_THRESHOLD: float = 0.9  # continue button for a case when vortex asks if it ned to redownload mod
 UNDERSTOOD_MATCH_THRESHOLD: float = 0.9
 STAGING_MATCH_THRESHOLD: float = 0.9
 
 # Timeouts (seconds)
-WAIT_TIMEOUT_VORTEX: float = 7.0 # idk but it works
-WAIT_TIMEOUT_WEB: float = 4.0 # same
-WAIT_TIMEOUT_CLICK_HERE: float = 6.0 #same
+WAIT_TIMEOUT_VORTEX: float = 7.0  # idk but it works
+WAIT_TIMEOUT_WEB: float = 4.0  # same
+WAIT_TIMEOUT_CLICK_HERE: float = 6.0  # same
 # Scan Intervals (seconds)
 SCAN_INTERVAL_VORTEX: float = 0.2
 SCAN_INTERVAL_WEB: float = 0.5
@@ -53,6 +62,7 @@ VORTEX_WINDOW_TITLE = "Vortex"
 USER32 = ctypes.windll.user32
 
 NO_CLICK_HERE = False
+
 
 class ScanState(Enum):
     INIT = auto()
@@ -69,29 +79,41 @@ class ScanState(Enum):
 
 
 class System:
-    def __init__(self, browser: Optional[str] = None, vortex: bool = False, verbose: bool = False, force_primary: bool = False):
+    def __init__(self, browser: Optional[str] = None, vortex: bool = False, verbose: bool = False, monitor: Optional[int] = None):
         self.browser = browser.lower()
         self.browser_closed = True
         log_level = logging.INFO if verbose else logging.WARNING
-        logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+        logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(message)s")
 
         logging.info("Initializing system...")
-        logging.info(f"Arguments: browser={browser}, vortex={vortex}, verbose={verbose}, force_primary={force_primary}")
+        logging.info(f"Arguments: browser={browser}, vortex={vortex}, verbose={verbose}, monitor={monitor}")
 
-        self.monitors = self._get_monitors()
-        if not self.monitors:
+        all_monitors = self._get_monitors()
+        if not all_monitors:
             logging.error("No monitors found. Exiting.")
             raise RuntimeError("Could not detect any display monitors.")
 
-        if force_primary:
-            self.monitors = [m for m in self.monitors if m['is_primary']]
+        if monitor is None:
+            # Default: use primary monitor only
+            self.monitors = [m for m in all_monitors if m["is_primary"]]
             if not self.monitors:
-                 self.monitors = [self._get_monitors()[0]]
-            logging.info("Forcing primary monitor only.")
+                self.monitors = [all_monitors[0]]
+                logging.warning("Primary monitor not explicitly found, using first available.")
+            logging.info("Using primary monitor only.")
         else:
-            self.monitors = sorted(self.monitors, key=lambda m: (m['left'], m['top']))
+            # Use specified monitor index
+            if monitor < 0 or monitor >= len(all_monitors):
+                logging.error(f"Monitor {monitor} not found. Available: 0 to {len(all_monitors) - 1}. Using primary.")
+                self.monitors = [m for m in all_monitors if m["is_primary"]]
+                if not self.monitors:
+                    self.monitors = [all_monitors[0]]
+            else:
+                # Sort monitors by position (left, top) for consistent indexing
+                sorted_monitors = sorted(all_monitors, key=lambda m: (m["left"], m["top"]))
+                self.monitors = [sorted_monitors[monitor]]
+                logging.info(f"Using monitor {monitor}: {self.monitors[0]}")
 
-        logging.info(f"Using {len(self.monitors)} monitors: {self.monitors}")
+        logging.info(f"Active monitors for scanning: {self.monitors}")
 
         self._calculate_monitor_geometry()
 
@@ -99,7 +121,7 @@ class System:
             self.button_templates: Dict[str, List[np.ndarray]] = self._load_assets(BUTTON_ASSETS, ASSET_DIRECTORY)
             logging.info("Loaded button assets.")
             if not self.button_templates:
-                 raise RuntimeError("No button assets were loaded. Check configuration and asset files.")
+                raise RuntimeError("No button assets were loaded. Check configuration and asset files.")
         except (FileNotFoundError, IOError, RuntimeError) as e:
             logging.error(f"Asset loading failed: {e}")
             raise
@@ -136,7 +158,7 @@ class System:
         monitor_details = []
         primary_monitor_found = False
         if not monitors_raw:
-             return []
+            return []
 
         for i, monitor in enumerate(monitors_raw):
             try:
@@ -150,28 +172,28 @@ class System:
                     "top": rect[1],
                     "width": rect[2] - rect[0],
                     "height": rect[3] - rect[1],
-                    "is_primary": is_primary
+                    "is_primary": is_primary,
                 }
                 monitor_details.append(details)
                 if is_primary:
                     primary_monitor_found = True
             except Exception as e:
-                 logging.error(f"Could not get info for monitor {i}: {e}")
+                logging.error(f"Could not get info for monitor {i}: {e}")
 
         if not primary_monitor_found and monitor_details:
-             monitor_details[0]['is_primary'] = True # Fallback
+            monitor_details[0]["is_primary"] = True  # Fallback
 
-        monitor_details.sort(key=lambda m: not m['is_primary']) # Primary first
+        monitor_details.sort(key=lambda m: not m["is_primary"])  # Primary first
         return monitor_details
 
     def _calculate_monitor_geometry(self) -> None:
         if not self.monitors:
             raise RuntimeError("Cannot calculate geometry without monitors.")
 
-        self.min_left = min(m['left'] for m in self.monitors)
-        self.min_top = min(m['top'] for m in self.monitors)
-        self.max_right = max(m['left'] + m['width'] for m in self.monitors)
-        self.max_bottom = max(m['top'] + m['height'] for m in self.monitors)
+        self.min_left = min(m["left"] for m in self.monitors)
+        self.min_top = min(m["top"] for m in self.monitors)
+        self.max_right = max(m["left"] + m["width"] for m in self.monitors)
+        self.max_bottom = max(m["top"] + m["height"] for m in self.monitors)
 
         self.full_width = self.max_right - self.min_left
         self.full_height = self.max_bottom - self.min_top
@@ -197,8 +219,8 @@ class System:
         for btn_key, filenames in asset_config.items():
             loaded_templates[btn_key] = []
             if not filenames:
-                 logging.warning(f"No filenames specified for button key '{btn_key}'.")
-                 continue
+                logging.warning(f"No filenames specified for button key '{btn_key}'.")
+                continue
             for filename in filenames:
                 path = os.path.join(asset_dir, filename)
                 if not os.path.isfile(path):
@@ -212,10 +234,11 @@ class System:
                 total_loaded += 1
                 logging.info(f"Loaded asset: {filename} (shape: {img.shape}) for key '{btn_key}'")
             if not loaded_templates[btn_key]:
-                 logging.error(f"Failed to load any assets for button key '{btn_key}'. Check filenames/paths in config. Everything will be broken!")
+                logging.error(
+                    f"Failed to load any assets for button key '{btn_key}'. Check filenames/paths in config. Everything will be broken!"
+                )
         logging.info(f"Total assets loaded: {total_loaded}")
         return loaded_templates
-
 
     def capture_screen(self) -> np.ndarray:
         sct_img = self.screen_capturer.grab(self.capture_area)
@@ -236,12 +259,13 @@ class System:
         except Exception as e:
             logging.error(f"Failed to perform click at ({x}, {y}): {e}")
 
-    def _detect_single_template(self,
-                                screen_img: np.ndarray,
-                                template_img: np.ndarray,
-                                threshold: float,
-                                search_bbox_screen: Optional[Tuple[int, int, int, int]] = None
-                               ) -> Optional[Tuple[float, Tuple[int, int]]]:
+    def _detect_single_template(
+        self,
+        screen_img: np.ndarray,
+        template_img: np.ndarray,
+        threshold: float,
+        search_bbox_screen: Optional[Tuple[int, int, int, int]] = None,
+    ) -> Optional[Tuple[float, Tuple[int, int]]]:
         template_h, template_w = template_img.shape[:2]
 
         search_region = screen_img
@@ -253,19 +277,22 @@ class System:
             img_x1, img_y1 = max(0, img_x1), max(0, img_y1)
             img_x2, img_y2 = min(screen_img.shape[1], img_x2), min(screen_img.shape[0], img_y2)
 
-            if img_x1 >= img_x2 or img_y1 >= img_y2: return None
+            if img_x1 >= img_x2 or img_y1 >= img_y2:
+                return None
             search_region = screen_img[img_y1:img_y2, img_x1:img_x2]
             offset_x, offset_y = img_x1, img_y1
-            if search_region.shape[0] < template_h or search_region.shape[1] < template_w: return None
+            if search_region.shape[0] < template_h or search_region.shape[1] < template_w:
+                return None
 
         try:
-             result = cv2.matchTemplate(search_region, template_img, cv2.TM_CCOEFF_NORMED)
+            result = cv2.matchTemplate(search_region, template_img, cv2.TM_CCOEFF_NORMED)
         except cv2.error as e:
-             logging.warning(f"cv2.matchTemplate failed: {e}. Search shape: {search_region.shape}, Template shape: {template_img.shape}")
-             return None
+            logging.warning(f"cv2.matchTemplate failed: {e}. Search shape: {search_region.shape}, Template shape: {template_img.shape}")
+            return None
 
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
-        if max_val >= 60: logging.info(max_val)
+        if max_val >= 60:
+            logging.info(max_val)
         if max_val >= threshold:
             center_x_img = offset_x + max_loc[0] + template_w // 2
             center_y_img = offset_y + max_loc[1] + template_h // 2
@@ -274,12 +301,9 @@ class System:
         else:
             return None
 
-
-    def detect_button_alternatives(self,
-                                   screen_img: np.ndarray,
-                                   button_key: str,
-                                   search_bbox_screen: Optional[Tuple[int, int, int, int]] = None
-                                  ) -> Optional[Tuple[int, int]]:
+    def detect_button_alternatives(
+        self, screen_img: np.ndarray, button_key: str, search_bbox_screen: Optional[Tuple[int, int, int, int]] = None
+    ) -> Optional[Tuple[int, int]]:
         templates = self.button_templates.get(button_key)
         threshold = self.match_thresholds.get(button_key, DEFAULT_MATCH_THRESHOLD)
 
@@ -303,11 +327,11 @@ class System:
         else:
             return None
 
-
     def get_vortex_bbox_screen(self) -> Optional[Tuple[int, int, int, int]]:
         try:
             hwnd = USER32.FindWindowW(None, VORTEX_WINDOW_TITLE)
-            if hwnd == 0: return None
+            if hwnd == 0:
+                return None
             rect = win32gui.GetWindowRect(hwnd)
             return rect
         except Exception as e:
@@ -322,18 +346,21 @@ class System:
 
     def _prepare_browser(self) -> None:
         commands = {
-            "chrome": r'start chrome --new-window about:blank',
-            "firefox": r'start firefox -new-window about:blank',
-            "edge": r'start msedge --new-window about:blank'
+            "chrome": r"start chrome --new-window about:blank",
+            "firefox": r"start firefox -new-window about:blank",
+            "edge": r"start msedge --new-window about:blank",
         }
-        window_titles = {"chrome": "New Tab - Google Chrome", "firefox": "Mozilla Firefox", "edge": "New tab - Microsoft​ Edge"}
-        fallback_titles = {"chrome": "Google Chrome", "firefox": "Mozilla Firefox", "edge": "Microsoft Edge"}
-        
-        if self.browser not in commands: logging.warning(f"Browser '{self.browser}' not recognized."); return
+        # window_titles = {"chrome": "New Tab - Google Chrome", "firefox": "Mozilla Firefox", "edge": "New tab - Microsoft​ Edge"}
+        # fallback_titles = {"chrome": "Google Chrome", "firefox": "Mozilla Firefox", "edge": "Microsoft Edge"}
+
+        if self.browser not in commands:
+            logging.warning(f"Browser '{self.browser}' not recognized.")
+            return
         logging.info(f"Preparing browser: {self.browser}")
         try:
-            subprocess.Popen(commands[self.browser], shell=True); time.sleep(1.5)
-        except:
+            subprocess.Popen(commands[self.browser], shell=True)
+            time.sleep(1.5)
+        except Exception:
             pass
         self._find_browser_hwnd()
 
@@ -343,31 +370,37 @@ class System:
 
         try:
             hwnd = USER32.FindWindowW(None, window_titles.get(self.browser))
-            if not hwnd: hwnd = USER32.FindWindowW(None, fallback_titles.get(self.browser))
+            if not hwnd:
+                hwnd = USER32.FindWindowW(None, fallback_titles.get(self.browser))
             if not hwnd:
                 class_names = {"chrome": "Chrome_WidgetWin_1", "firefox": "MozillaWindowClass", "edge": "Chrome_WidgetWin_1"}
                 hwnd = USER32.FindWindowW(class_names.get(self.browser), None)
 
             if hwnd and len(self.monitors) > 0:
                 primary_monitor = self.monitors[0]
-                x, y = primary_monitor['left'], primary_monitor['top']
+                x, y = primary_monitor["left"], primary_monitor["top"]
                 win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, x, y, 0, 0, win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
-            if hwnd: self.browser_hwnd = hwnd
-        except Exception as e: logging.error(f"Failed to prepare browser '{self.browser}': {e}")
-
+            if hwnd:
+                self.browser_hwnd = hwnd
+        except Exception as e:
+            logging.error(f"Failed to prepare browser '{self.browser}': {e}")
 
     def _prepare_vortex(self) -> None:
-        if len(self.monitors) <= 1: logging.info("Single monitor, skipping Vortex positioning."); return
+        if len(self.monitors) <= 1:
+            logging.info("Single monitor, skipping Vortex positioning.")
+            return
         logging.info("Attempting to position Vortex window...")
         try:
             hwnd = USER32.FindWindowW(None, VORTEX_WINDOW_TITLE)
-            if hwnd == 0: logging.warning(f"Vortex window ('{VORTEX_WINDOW_TITLE}') not found for positioning."); return
+            if hwnd == 0:
+                logging.warning(f"Vortex window ('{VORTEX_WINDOW_TITLE}') not found for positioning.")
+                return
             target_monitor = self.monitors[1] if len(self.monitors) > 1 else self.monitors[0]
-            x, y = target_monitor['left'] + 50, target_monitor['top'] + 50
+            x, y = target_monitor["left"] + 50, target_monitor["top"] + 50
             win32gui.SetWindowPos(hwnd, win32con.HWND_TOP, x, y, 0, 0, win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW)
             logging.info(f"Positioned Vortex window (HWND: {hwnd}) on monitor: {target_monitor.get('device', 'Unknown')}")
-        except Exception as e: logging.error(f"Failed to position Vortex window: {e}")
-
+        except Exception as e:
+            logging.error(f"Failed to position Vortex window: {e}")
 
     def _transition_state(self, next_state: ScanState):
         if self.current_state != next_state:
@@ -375,15 +408,17 @@ class System:
             self.current_state = next_state
             self.state_transition_time = time.monotonic()
 
-
     def run_state_machine(self) -> None:
         now = time.monotonic()
         elapsed_state_time = now - self.state_transition_time
 
         timeout = None
-        if self.current_state == ScanState.WAIT_FOR_VORTEX_OR_CONTINUE: timeout = WAIT_TIMEOUT_VORTEX
-        elif self.current_state == ScanState.WAIT_FOR_WEB: timeout = WAIT_TIMEOUT_WEB
-        elif self.current_state == ScanState.WAIT_FOR_CLICK_HERE: timeout = WAIT_TIMEOUT_CLICK_HERE
+        if self.current_state == ScanState.WAIT_FOR_VORTEX_OR_CONTINUE:
+            timeout = WAIT_TIMEOUT_VORTEX
+        elif self.current_state == ScanState.WAIT_FOR_WEB:
+            timeout = WAIT_TIMEOUT_WEB
+        elif self.current_state == ScanState.WAIT_FOR_CLICK_HERE:
+            timeout = WAIT_TIMEOUT_CLICK_HERE
 
         if timeout is not None and elapsed_state_time > timeout:
             logging.warning(f"Timeout in state {self.current_state.name}. Resetting.")
@@ -392,18 +427,18 @@ class System:
 
         screen_img = None
         capture_needed_states = [
-             ScanState.WAIT_FOR_VORTEX_OR_CONTINUE,
-             ScanState.WAIT_FOR_WEB,
+            ScanState.WAIT_FOR_VORTEX_OR_CONTINUE,
+            ScanState.WAIT_FOR_WEB,
         ]
         if not NO_CLICK_HERE:
             capture_needed_states.append(ScanState.WAIT_FOR_CLICK_HERE)
 
         if self.current_state in capture_needed_states:
-             screen_img = self.capture_screen()
-             if screen_img is None:
-                 logging.error("Failed to capture screen.")
-                 time.sleep(1)
-                 return
+            screen_img = self.capture_screen()
+            if screen_img is None:
+                logging.error("Failed to capture screen.")
+                time.sleep(1)
+                return
 
         if self.current_state == ScanState.INIT:
             logging.info("Starting scan cycle...")
@@ -414,16 +449,17 @@ class System:
             time.sleep(0.1)
 
         elif self.current_state == ScanState.WAIT_FOR_VORTEX_OR_CONTINUE:
-            if screen_img is None: return
+            if screen_img is None:
+                return
 
-            understood_loc = self.detect_button_alternatives(screen_img, "understood") # not sure
+            understood_loc = self.detect_button_alternatives(screen_img, "understood")  # not sure
             if understood_loc:
                 logging.info(f"'Understood' button found at {understood_loc}.")
                 self.last_click_location = understood_loc
                 self._transition_state(ScanState.CLICK_UNDERSTOOD)
                 return
 
-            staging_loc = self.detect_button_alternatives(screen_img, "staging") # not sure 
+            staging_loc = self.detect_button_alternatives(screen_img, "staging")  # not sure
             if staging_loc:
                 logging.info(f"'Staging' button found at {staging_loc}.")
                 self.last_click_location = staging_loc
@@ -442,25 +478,26 @@ class System:
             if vortex_dl_loc:
                 logging.info(f"Vortex 'Download' button found at {vortex_dl_loc}.")
                 if vortex_dl_loc:
-                    if self.browser_hwnd and not self.browser_closed: #try to close current browser tab just before clicking download in vertex (or vortex icr)    
+                    if (
+                        self.browser_hwnd and not self.browser_closed
+                    ):  # try to close current browser tab just before clicking download in vertex (or vortex icr)
                         try:
                             self._find_browser_hwnd()
                             win32gui.ShowWindow(self.browser_hwnd, win32con.SW_RESTORE)
-                            win32api.keybd_event(win32con.VK_MENU,             0, 0, 0)
+                            win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)
                             time.sleep(0.2)
                             win32gui.SetForegroundWindow(self.browser_hwnd)
-                            win32api.keybd_event(win32con.VK_MENU,             0, win32con.KEYEVENTF_KEYUP, 0)
-                            
+                            win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
 
                             time.sleep(0.05)
                             win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
-                            win32api.keybd_event(ord('W'),             0, 0, 0)
+                            win32api.keybd_event(ord("W"), 0, 0, 0)
                             time.sleep(0.05)
-                            win32api.keybd_event(ord('W'),             0, win32con.KEYEVENTF_KEYUP, 0)
+                            win32api.keybd_event(ord("W"), 0, win32con.KEYEVENTF_KEYUP, 0)
                             win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
 
                             self.browser_closed = True
-                        except:
+                        except Exception:
                             pass
 
                 self.last_click_location = vortex_dl_loc
@@ -469,18 +506,18 @@ class System:
 
             time.sleep(SCAN_INTERVAL_VORTEX)
 
-
         elif self.current_state == ScanState.WAIT_FOR_WEB:
-            if screen_img is None: return
+            if screen_img is None:
+                return
 
-            understood_loc = self.detect_button_alternatives(screen_img, "understood") #not sure at all
+            understood_loc = self.detect_button_alternatives(screen_img, "understood")  # not sure at all
             if understood_loc:
                 logging.info(f"'Understood' button found at {understood_loc}.")
                 self.last_click_location = understood_loc
                 self._transition_state(ScanState.CLICK_UNDERSTOOD)
                 return
 
-            staging_loc = self.detect_button_alternatives(screen_img, "staging") #not sure
+            staging_loc = self.detect_button_alternatives(screen_img, "staging")  # not sure
             if staging_loc:
                 logging.info(f"'Staging' button found at {staging_loc}.")
                 self.last_click_location = staging_loc
@@ -489,35 +526,39 @@ class System:
 
             web_loc = self.detect_button_alternatives(screen_img, "web_dl")
             if web_loc:
-                 logging.info(f"Web Download button found at {web_loc}.")
-                 self.last_click_location = web_loc
-                 self._transition_state(ScanState.CLICK_WEB)
-                 self.browser_closed = False
-                 return
+                logging.info(f"Web Download button found at {web_loc}.")
+                self.last_click_location = web_loc
+                self._transition_state(ScanState.CLICK_WEB)
+                self.browser_closed = False
+                return
 
             time.sleep(SCAN_INTERVAL_WEB)
 
-
         elif self.current_state == ScanState.WAIT_FOR_CLICK_HERE:
-             if NO_CLICK_HERE:
+            if NO_CLICK_HERE:
                 logging.warning(f"Skipping {self.current_state.name}")
                 self._transition_state(ScanState.INIT)
                 return
-             if screen_img is None: return
+            if screen_img is None:
+                return
 
-             click_here_loc = self.detect_button_alternatives(screen_img, "click_here")
-             if click_here_loc:
-                 logging.info(f"'Click Here' button found at {click_here_loc}.")
-                 self.last_click_location = click_here_loc
-                 self._transition_state(ScanState.CLICK_NEXT)
-                 return
+            click_here_loc = self.detect_button_alternatives(screen_img, "click_here")
+            if click_here_loc:
+                logging.info(f"'Click Here' button found at {click_here_loc}.")
+                self.last_click_location = click_here_loc
+                self._transition_state(ScanState.CLICK_NEXT)
+                return
 
-             time.sleep(SCAN_INTERVAL_CLICK_HERE)
+            time.sleep(SCAN_INTERVAL_CLICK_HERE)
 
-
-        elif self.current_state in [ScanState.CLICK_VORTEX, ScanState.CLICK_CONTINUE,
-                                    ScanState.CLICK_WEB, ScanState.CLICK_NEXT,
-                                    ScanState.CLICK_UNDERSTOOD, ScanState.CLICK_STAGING]:
+        elif self.current_state in [
+            ScanState.CLICK_VORTEX,
+            ScanState.CLICK_CONTINUE,
+            ScanState.CLICK_WEB,
+            ScanState.CLICK_NEXT,
+            ScanState.CLICK_UNDERSTOOD,
+            ScanState.CLICK_STAGING,
+        ]:
             if self.last_click_location:
                 self._click(*self.last_click_location)
                 if self.current_state in [ScanState.CLICK_VORTEX, ScanState.CLICK_CONTINUE]:
@@ -525,14 +566,14 @@ class System:
                 elif self.current_state == ScanState.CLICK_WEB:
                     self._transition_state(ScanState.WAIT_FOR_CLICK_HERE)
                 elif self.current_state == ScanState.CLICK_NEXT:
-                     self._transition_state(ScanState.PROCESS_COMPLETE)
-                elif self.current_state == ScanState.CLICK_UNDERSTOOD: #yep, still not sure, never seen that
-                     logging.info("Clicked 'Understood', re-checking for primary buttons...")
-                     self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
+                    self._transition_state(ScanState.PROCESS_COMPLETE)
+                elif self.current_state == ScanState.CLICK_UNDERSTOOD:  # yep, still not sure, never seen that
+                    logging.info("Clicked 'Understood', re-checking for primary buttons...")
+                    self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
 
-                elif self.current_state == ScanState.CLICK_STAGING: #same
-                     logging.info("Clicked 'Staging', re-checking for primary buttons...")
-                     self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
+                elif self.current_state == ScanState.CLICK_STAGING:  # same
+                    logging.info("Clicked 'Staging', re-checking for primary buttons...")
+                    self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
 
             else:
                 logging.error(f"State {self.current_state.name} reached without a click location!")
@@ -542,7 +583,6 @@ class System:
             logging.info(f"Scan cycle potentially complete. Waiting {POST_CLICK_DELAY}s.")
             time.sleep(POST_CLICK_DELAY)
             self._transition_state(ScanState.INIT)
-
 
     def scan_continuously(self) -> None:
         logging.info("Starting continuous scan...")
@@ -554,37 +594,60 @@ class System:
         except Exception as e:
             logging.exception(f"An unexpected error occurred during scan: {e}")
         finally:
-            if hasattr(self, 'screen_capturer') and self.screen_capturer:
+            if hasattr(self, "screen_capturer") and self.screen_capturer:
                 self.screen_capturer.close()
             logging.info("Screen capturer closed. Exiting.")
 
 
 @click.command()
-@click.option('--browser', type=click.Choice(['chrome', 'firefox', 'edge', ""], case_sensitive=False), default="", help='Browser to open (optional).')
-@click.option('--vortex', is_flag=True, default=False, help='Enable Vortex-specific logic.')
-@click.option('--verbose', '-v', is_flag=True, default=False, help='Enable detailed informational logging.')
-@click.option('--force-primary', is_flag=True, default=False, help='Only use the primary monitor.')
-@click.option('--no-click-here', is_flag=True, default=False, help='Skip click here state. Useful for wabbajack')
-@click.option('--vortex-dl-match-threshold', type=float, default=VORTEX_DL_MATCH_THRESHOLD, help='Match threshold for Vortex download button.')
-@click.option('--vortex-cont-match-threshold', type=float, default=VORTEX_CONT_MATCH_THRESHOLD, help='Match threshold for Vortex continue button.')
-@click.option('--web-dl-match-threshold', type=float, default=WEB_DL_MATCH_THRESHOLD, help='Match threshold for web download button.')
-@click.option('--click-here-match-threshold', type=float, default=CLICK_HERE_MATCH_THRESHOLD, help='Match threshold for "click here" button.')
-@click.option('--understood-match-threshold', type=float, default=UNDERSTOOD_MATCH_THRESHOLD, help='Match threshold for "understood" button.')
-@click.option('--staging-match-threshold', type=float, default=STAGING_MATCH_THRESHOLD, help='Match threshold for staging-related button.')
-@click.option('--wait-timeout-vortex', type=float, default=WAIT_TIMEOUT_VORTEX, help='Timeout for Vortex-specific waits.')
-@click.option('--wait-timeout-web', type=float, default=WAIT_TIMEOUT_WEB, help='Timeout for web-related waits.')
-@click.option('--wait-timeout-click-here', type=float, default=WAIT_TIMEOUT_CLICK_HERE, help='Timeout for "click here" waits.')
-@click.option('--scan-interval-vortex', type=float, default=SCAN_INTERVAL_VORTEX, help='Scan interval for Vortex actions.')
-@click.option('--scan-interval-web', type=float, default=SCAN_INTERVAL_WEB, help='Scan interval for web actions.')
-@click.option('--scan-interval-click-here', type=float, default=SCAN_INTERVAL_CLICK_HERE, help='Scan interval for "click here" actions.')
-@click.option('--post-click-delay', type=float, default=POST_CLICK_DELAY, help='Delay after final click before restarting scan.')
-
-
-def main(browser, vortex, verbose, force_primary, no_click_here, vortex_dl_match_threshold, vortex_cont_match_threshold,
-         web_dl_match_threshold, click_here_match_threshold, understood_match_threshold,
-         staging_match_threshold, wait_timeout_vortex, wait_timeout_web,
-         wait_timeout_click_here, scan_interval_vortex, scan_interval_web,
-         scan_interval_click_here, post_click_delay):
+@click.option(
+    "--browser", type=click.Choice(["chrome", "firefox", "edge", ""], case_sensitive=False), default="", help="Browser to open (optional)."
+)
+@click.option("--vortex", is_flag=True, default=False, help="Enable Vortex-specific logic.")
+@click.option("--verbose", "-v", is_flag=True, default=False, help="Enable detailed informational logging.")
+@click.option("--monitor", type=int, default=None, help="Monitor number to use (0, 1, etc.). Default: primary monitor.")
+@click.option("--no-click-here", is_flag=True, default=False, help="Skip click here state. Useful for wabbajack")
+@click.option(
+    "--vortex-dl-match-threshold", type=float, default=VORTEX_DL_MATCH_THRESHOLD, help="Match threshold for Vortex download button."
+)
+@click.option(
+    "--vortex-cont-match-threshold", type=float, default=VORTEX_CONT_MATCH_THRESHOLD, help="Match threshold for Vortex continue button."
+)
+@click.option("--web-dl-match-threshold", type=float, default=WEB_DL_MATCH_THRESHOLD, help="Match threshold for web download button.")
+@click.option(
+    "--click-here-match-threshold", type=float, default=CLICK_HERE_MATCH_THRESHOLD, help='Match threshold for "click here" button.'
+)
+@click.option(
+    "--understood-match-threshold", type=float, default=UNDERSTOOD_MATCH_THRESHOLD, help='Match threshold for "understood" button.'
+)
+@click.option("--staging-match-threshold", type=float, default=STAGING_MATCH_THRESHOLD, help="Match threshold for staging-related button.")
+@click.option("--wait-timeout-vortex", type=float, default=WAIT_TIMEOUT_VORTEX, help="Timeout for Vortex-specific waits.")
+@click.option("--wait-timeout-web", type=float, default=WAIT_TIMEOUT_WEB, help="Timeout for web-related waits.")
+@click.option("--wait-timeout-click-here", type=float, default=WAIT_TIMEOUT_CLICK_HERE, help='Timeout for "click here" waits.')
+@click.option("--scan-interval-vortex", type=float, default=SCAN_INTERVAL_VORTEX, help="Scan interval for Vortex actions.")
+@click.option("--scan-interval-web", type=float, default=SCAN_INTERVAL_WEB, help="Scan interval for web actions.")
+@click.option("--scan-interval-click-here", type=float, default=SCAN_INTERVAL_CLICK_HERE, help='Scan interval for "click here" actions.')
+@click.option("--post-click-delay", type=float, default=POST_CLICK_DELAY, help="Delay after final click before restarting scan.")
+def main(
+    browser,
+    vortex,
+    verbose,
+    monitor,
+    no_click_here,
+    vortex_dl_match_threshold,
+    vortex_cont_match_threshold,
+    web_dl_match_threshold,
+    click_here_match_threshold,
+    understood_match_threshold,
+    staging_match_threshold,
+    wait_timeout_vortex,
+    wait_timeout_web,
+    wait_timeout_click_here,
+    scan_interval_vortex,
+    scan_interval_web,
+    scan_interval_click_here,
+    post_click_delay,
+):
     global VORTEX_DL_MATCH_THRESHOLD, VORTEX_CONT_MATCH_THRESHOLD, WEB_DL_MATCH_THRESHOLD
     global CLICK_HERE_MATCH_THRESHOLD, UNDERSTOOD_MATCH_THRESHOLD, STAGING_MATCH_THRESHOLD
     global WAIT_TIMEOUT_VORTEX, WAIT_TIMEOUT_WEB, WAIT_TIMEOUT_CLICK_HERE
@@ -608,10 +671,10 @@ def main(browser, vortex, verbose, force_primary, no_click_here, vortex_dl_match
     NO_CLICK_HERE = no_click_here
 
     log_level = logging.INFO if verbose else logging.WARNING
-    logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=log_level, format="%(asctime)s - %(levelname)s - %(message)s")
 
     try:
-        agent = System(browser=browser, vortex=vortex, verbose=verbose, force_primary=force_primary)
+        agent = System(browser=browser, vortex=vortex, verbose=verbose, monitor=monitor)
         agent.scan_continuously()
     except (RuntimeError, FileNotFoundError, IOError) as e:
         logging.error(f"Initialization or runtime error: {e}")
