@@ -12,7 +12,7 @@ import numpy as np
 import win32api
 import win32con
 import win32gui
-from win32com.client import Dispatch
+from utils.utils import termination_handler, wrong_sleep
 
 # change them if something not working
 BUTTON_ASSETS = {
@@ -40,7 +40,7 @@ ASSET_DIRECTORY = "assets"
 
 # leave as is
 DEFAULT_MATCH_THRESHOLD = 0.9
-VORTEX_DL_MATCH_THRESHOLD: float = 0.9  # vortex download button
+VORTEX_DL_MATCH_THRESHOLD: float = 0.8  # vortex download button
 VORTEX_CONT_MATCH_THRESHOLD: float = 0.9  # slow download button in nexus site
 WEB_DL_MATCH_THRESHOLD: float = 0.8  # click here button in nexus site (just for sure)
 CLICK_HERE_MATCH_THRESHOLD: float = 0.9  # continue button for a case when vortex asks if it ned to redownload mod
@@ -251,9 +251,9 @@ class System:
             original_pos = win32api.GetCursorPos()
             win32api.SetCursorPos((x, y))
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
-            time.sleep(0.05)
+            wrong_sleep(0.05)
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
-            time.sleep(0.05)
+            wrong_sleep(0.05)
             win32api.SetCursorPos(original_pos)
             logging.info(f"Clicked at screen coordinates: ({x}, {y})")
         except Exception as e:
@@ -359,7 +359,7 @@ class System:
         logging.info(f"Preparing browser: {self.browser}")
         try:
             subprocess.Popen(commands[self.browser], shell=True)
-            time.sleep(1.5)
+            wrong_sleep(1.5)
         except Exception:
             pass
         self._find_browser_hwnd()
@@ -437,7 +437,7 @@ class System:
             screen_img = self.capture_screen()
             if screen_img is None:
                 logging.error("Failed to capture screen.")
-                time.sleep(1)
+                wrong_sleep(1)
                 return
 
         if self.current_state == ScanState.INIT:
@@ -446,7 +446,7 @@ class System:
                 self._transition_state(ScanState.WAIT_FOR_WEB)
             else:
                 self._transition_state(ScanState.WAIT_FOR_VORTEX_OR_CONTINUE)
-            time.sleep(0.1)
+            wrong_sleep(0.1)
 
         elif self.current_state == ScanState.WAIT_FOR_VORTEX_OR_CONTINUE:
             if screen_img is None:
@@ -485,14 +485,14 @@ class System:
                             self._find_browser_hwnd()
                             win32gui.ShowWindow(self.browser_hwnd, win32con.SW_RESTORE)
                             win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)
-                            time.sleep(0.2)
+                            wrong_sleep(0.2)
                             win32gui.SetForegroundWindow(self.browser_hwnd)
                             win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
 
-                            time.sleep(0.05)
+                            wrong_sleep(0.05)
                             win32api.keybd_event(win32con.VK_CONTROL, 0, 0, 0)
                             win32api.keybd_event(ord("W"), 0, 0, 0)
-                            time.sleep(0.05)
+                            wrong_sleep(0.05)
                             win32api.keybd_event(ord("W"), 0, win32con.KEYEVENTF_KEYUP, 0)
                             win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)
 
@@ -504,7 +504,7 @@ class System:
                 self._transition_state(ScanState.CLICK_VORTEX)
                 return
 
-            time.sleep(SCAN_INTERVAL_VORTEX)
+            wrong_sleep(SCAN_INTERVAL_VORTEX)
 
         elif self.current_state == ScanState.WAIT_FOR_WEB:
             if screen_img is None:
@@ -532,7 +532,7 @@ class System:
                 self.browser_closed = False
                 return
 
-            time.sleep(SCAN_INTERVAL_WEB)
+            wrong_sleep(SCAN_INTERVAL_WEB)
 
         elif self.current_state == ScanState.WAIT_FOR_CLICK_HERE:
             if NO_CLICK_HERE:
@@ -549,7 +549,7 @@ class System:
                 self._transition_state(ScanState.CLICK_NEXT)
                 return
 
-            time.sleep(SCAN_INTERVAL_CLICK_HERE)
+            wrong_sleep(SCAN_INTERVAL_CLICK_HERE)
 
         elif self.current_state in [
             ScanState.CLICK_VORTEX,
@@ -581,7 +581,7 @@ class System:
 
         elif self.current_state == ScanState.PROCESS_COMPLETE:
             logging.info(f"Scan cycle potentially complete. Waiting {POST_CLICK_DELAY}s.")
-            time.sleep(POST_CLICK_DELAY)
+            wrong_sleep(POST_CLICK_DELAY)
             self._transition_state(ScanState.INIT)
 
     def scan_continuously(self) -> None:
@@ -683,4 +683,5 @@ def main(
 
 
 if __name__ == "__main__":
+    termination_handler()
     main()
