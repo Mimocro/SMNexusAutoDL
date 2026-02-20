@@ -12,6 +12,8 @@ import numpy as np
 import win32api
 import win32con
 import win32gui
+import psutil
+
 from utils.utils import termination_handler, wrong_sleep
 
 # change them if something not working

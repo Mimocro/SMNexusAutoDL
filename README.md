@@ -95,7 +95,7 @@ A basic command that you can copypaste if you are using firefox and vortex:
 --browser <browserName>: selects browser to open and move to work with Vortex. Can only be used in combination with `--vortex`. Currently supported browsers: “chrome”, “firefox” and "edge" (limited and untested)
 --vortex: specifies use with Vortex mod manager: i have not tested it with any other mod manager, but it should work i think
 --verbose: prints verbose output
---force-primary: forces a system with multiple monitors to only be scanned on it’s primary display
+--monitor: selects the monitor. primary by default
 --no-click-here: skip click here state. Useful for wabbajack
 --vortex-dl-match-threshold <float>: Match threshold for Vortex download button (default: 0.9)
 --vortex-cont-match-threshold <float>: Match threshold for Vortex continue button (default: 0.9)
